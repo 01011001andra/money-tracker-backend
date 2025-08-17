@@ -19,9 +19,9 @@ export class AuthController {
     return this.authService.register(authPayload);
   }
 
-  @Get('get-me')
+  @Get('initial')
   @UseGuards(JwtAuthGuard)
-  getMe(@Req() req: Request) {
-    return this.authService.getMe(String(req.user?.id));
+  getInitial(@Req() req: Request) {
+    return this.authService.getInitial(String(req.user?.id));
   }
 }

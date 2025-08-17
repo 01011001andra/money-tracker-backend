@@ -6,11 +6,19 @@ import {
   Patch,
   Param,
   Delete,
+  Put,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { JwtAuthGuard } from 'src/common/guards/jwt.guard';
+import { Request } from 'express';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('users')
+@UseGuards(JwtAuthGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -32,19 +40,25 @@ export class UsersController {
     return this.usersService.findOne(id);
   }
 
-  @Patch(':id')
+  @Put('update-profile')
   update(
-    @Param('id') id: string,
     @Body()
-    updateUserDto: {
-      name: string;
-      email: string;
-      age: number;
-      isMarried: boolean;
-      nationality: string;
-    },
+    updateUserDto: UpdateUserDto,
+    @Req() req: Request,
   ) {
-    return this.usersService.update(id, updateUserDto);
+    return this.usersService.update(String(req.user?.id), updateUserDto);
+  }
+
+  @Put('change-password')
+  changePassword(
+    @Body()
+    changePasswordDto: ChangePasswordDto,
+    @Req() req: Request,
+  ) {
+    return this.usersService.changePassword(
+      String(req.user?.id),
+      changePasswordDto,
+    );
   }
 
   @Delete(':id')

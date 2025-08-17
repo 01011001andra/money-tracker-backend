@@ -1,4 +1,10 @@
-import { ConflictException, HttpException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  HttpException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { LoginDto } from './dto/login.dto';
 import { DatabaseService } from 'src/database/database.service';
 import * as bcrypt from 'bcrypt';
@@ -25,13 +31,14 @@ export class AuthService {
       const { password, ...restUser } = user;
 
       const token = this.jwtService.sign(restUser);
+      const initial = await this.getInitial(user.id);
 
       return {
-        id: restUser.id,
-        name: restUser.name,
-        email: restUser.email,
+        initial,
         token,
       };
+    } else {
+      throw new HttpException('Invalid Credentials', 400);
     }
   }
 
@@ -47,8 +54,20 @@ export class AuthService {
     return user;
   }
 
-  async getMe(userId: string) {
-    return this.prisma.user.findUnique({ where: { id: userId } });
+  async getInitial(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return {
+      user: {
+        id: user.id,
+        name: user.name,
+        image: user?.image as string | null,
+        email: user.email,
+      },
+    };
   }
 
   async isUserExist(email: string) {

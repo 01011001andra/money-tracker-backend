@@ -19,6 +19,7 @@ model User {
      name                String
      email               String              @unique
      password            String
+     image               String?
      transaction         Transaction[]
      summary             Summary[]
      details             DetailSummary[]
