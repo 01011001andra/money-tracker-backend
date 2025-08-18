@@ -28,9 +28,9 @@ export class AuthService {
     const match = await bcrypt.compare(password, user.password);
 
     if (match) {
-      const { password, ...restUser } = user;
+      const { id } = user;
 
-      const token = this.jwtService.sign(restUser);
+      const token = this.jwtService.sign({ id });
       const initial = await this.getInitial(user.id);
 
       return {
@@ -40,6 +40,10 @@ export class AuthService {
     } else {
       throw new HttpException('Invalid Credentials', 400);
     }
+  }
+
+  logout() {
+    throw new UnauthorizedException('Logout succeed');
   }
 
   async register(createUserDto: RegisterDto) {
@@ -56,11 +60,11 @@ export class AuthService {
 
   async getInitial(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
-
-    return {
+    const data = {
       user: {
         id: user.id,
         name: user.name,
@@ -68,6 +72,9 @@ export class AuthService {
         email: user.email,
       },
     };
+    // throw new UnauthorizedException('Logout succeed');
+
+    return data;
   }
 
   async isUserExist(email: string) {

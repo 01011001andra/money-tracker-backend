@@ -14,16 +14,21 @@ import {
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import { CategoryService } from 'src/category/category.service';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 @Injectable()
 export class TransactionService {
-  constructor(private prisma: DatabaseService) {}
+  constructor(
+    private prisma: DatabaseService,
+    private category: CategoryService,
+  ) {}
 
   async create(createTransactionDto: CreateTransactionDto, userId: string) {
-    const category = await this.getOrCreateCategory(
-      createTransactionDto.categoryId,
+    const category = await this.category.create(
+      { categoryId: createTransactionDto.categoryId },
+      userId,
     );
 
     const transaction = await this.prisma.transaction.create({
@@ -241,6 +246,9 @@ export class TransactionService {
         transactionDate: true,
         note: true,
       },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
     const totalTransactions = await this.prisma.transaction.count({
@@ -272,12 +280,14 @@ export class TransactionService {
 
   async update(
     id: string,
+    userId: string,
     updateTransactionDto: UpdateTransactionDto,
   ): Promise<BaseResponse<any>> {
     const transaction = await this.findOneOrError(id);
 
     const category = await this.getOrCreateCategory(
       String(updateTransactionDto.categoryId),
+      userId,
     );
 
     const updatedTransaction = await this.prisma.transaction.update({
@@ -335,17 +345,18 @@ export class TransactionService {
     return transaction;
   }
 
-  async getOrCreateCategory(categoryId: string) {
+  async getOrCreateCategory(categoryId: string, userId: string) {
     const lowerCaseCategory = categoryId.toLowerCase();
     let category = await this.prisma.category.findFirst({
       where: {
+        userId,
         OR: [{ id: lowerCaseCategory }, { name: lowerCaseCategory }],
       },
     });
 
     if (!category) {
       category = await this.prisma.category.create({
-        data: { name: lowerCaseCategory },
+        data: { name: lowerCaseCategory, userId },
       });
     }
     return category;

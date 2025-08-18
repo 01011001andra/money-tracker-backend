@@ -58,12 +58,18 @@ export class TransactionController {
     return this.transactionService.findOne(id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Put(':id')
   update(
     @Param('id') id: string,
     @Body() updateTransactionDto: UpdateTransactionDto,
+    @Req() req: Request,
   ) {
-    return this.transactionService.update(id, updateTransactionDto);
+    return this.transactionService.update(
+      id,
+      String(req.user?.id),
+      updateTransactionDto,
+    );
   }
 
   @Delete(':id')

@@ -14,6 +14,12 @@ export class AuthController {
     return this.authService.login(authPayload);
   }
 
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  logout() {
+    return this.authService.logout();
+  }
+
   @Post('register')
   register(@Body() authPayload: RegisterDto) {
     return this.authService.register(authPayload);
