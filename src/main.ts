@@ -14,7 +14,7 @@ async function bootstrap() {
   );
   app.setGlobalPrefix('/api/v1');
   app.enableCors({
-    origin: ['http://localhost', 'https://musyan.vercel.app'],
+    origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   });
 
