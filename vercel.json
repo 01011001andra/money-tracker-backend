@@ -2,13 +2,16 @@
   "version": 2,
   "builds": [
     {
-      "src": "dist/vercel-handler.js",
+      "src": "src/vercel-handler.ts",
       "use": "@vercel/node",
-      "config": { "includeFiles": ["prisma/**", "public/**"] }
+      "config": { "includeFiles": ["prisma/**"] }
     }
   ],
   "routes": [
-    { "src": "/favicon.(ico|png)", "dest": "/public/favicon.ico" },
-    { "src": "/(.*)", "dest": "dist/vercel-handler.js" }
+    {
+      "src": "/(.*)",
+      "dest": "src/vercel-handler.ts",
+      "methods": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+    }
   ]
 }
