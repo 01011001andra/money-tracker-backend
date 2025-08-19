@@ -4,7 +4,7 @@
     {
       "src": "src/vercel-handler.ts",
       "use": "@vercel/node",
-      "config": { "includeFiles": ["prisma/**", "prisma.config.ts"] }
+      "config": { "includeFiles": ["prisma/**", "prisma.config.ts", "public/**"] }
     }
   ],
   "routes": [

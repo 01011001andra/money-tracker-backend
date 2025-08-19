@@ -23,14 +23,7 @@ export default async function handler(req: any, res: any) {
     app.setGlobalPrefix('api/v1'); // tanpa leading slash
 
     app.enableCors({
-      origin: (origin, cb) => {
-        if (!origin) return cb(null, true); // curl/server-to-server
-        const allow =
-          origin.startsWith('http://localhost:3000') ||
-          origin.startsWith('http://localhost:5173') ||
-          origin === 'https://musyan.vercel.app';
-        cb(allow ? null : new Error('Not allowed by CORS'), allow);
-      },
+      origin: ['http://localhost', 'https://musyan.vercel.app'],
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
       credentials: true,
     });
