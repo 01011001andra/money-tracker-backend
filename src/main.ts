@@ -17,6 +17,7 @@ async function bootstrap() {
     origin: ['http://localhost', 'https://musyan.vercel.app'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   });
+
   app.use(json({ limit: '2mb' }));
   app.use(urlencoded({ limit: '2mb', extended: true }));
 
