@@ -15,6 +15,8 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import { CategoryService } from 'src/category/category.service';
+import { getPeriodRange } from 'src/common/utils/helper';
+// import { getRange } from 'src/common/utils/helper';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
@@ -211,26 +213,26 @@ export class TransactionService {
     page: number,
     limit: number,
     search: string,
+    filter?: 'day' | 'week' | 'month' | 'year',
   ): Promise<PaginatedResponse<any>> {
+    const range = getPeriodRange(filter, 'Asia/Jakarta');
+    console.log(range);
     const skip = (page - 1) * limit;
-    const whereCondition = {
+    const whereCondition: Prisma.TransactionWhereInput = {
       userId: userId,
       deletedAt: null,
+      ...(range && {
+        transactionDate: range,
+      }),
+
       ...(search && {
         OR: [
-          {
-            title: {
-              contains: search,
-              mode: Prisma.QueryMode.insensitive,
-            },
-            note: {
-              contains: search,
-              mode: Prisma.QueryMode.insensitive,
-            },
-          },
+          { title: { contains: search, mode: 'insensitive' } },
+          { note: { contains: search, mode: 'insensitive' } },
         ],
       }),
     };
+
     const transactions = await this.prisma.transaction.findMany({
       where: whereCondition,
       skip: skip,
@@ -250,15 +252,19 @@ export class TransactionService {
         createdAt: 'desc',
       },
     });
+    const result = transactions.map((t) => ({
+      ...t,
+      transactionDate: dayjs(t.transactionDate).format('DD-MM-YYYY'),
+    }));
 
     const totalTransactions = await this.prisma.transaction.count({
       where: whereCondition,
     });
 
     return {
-      message: 'Transaction List',
+      message: `Transaction ${dayjs(range?.gte).format('DD/MM/YYYY')} - ${dayjs(range?.lt).format('DD/MM/YYYY')}`,
       status: 'Success',
-      data: transactions,
+      data: result,
       meta: {
         total: totalTransactions,
         page,

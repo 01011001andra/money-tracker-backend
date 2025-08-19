@@ -39,6 +39,7 @@ export class TransactionController {
       Number(req.query.page || 1),
       Number(req.query.limit || 10),
       (req.query.search as string) || '',
+      (req.query.filter as 'day' | 'week' | 'month' | 'year') || '',
     );
   }
 
