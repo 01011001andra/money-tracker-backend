@@ -216,7 +216,6 @@ export class TransactionService {
     filter?: 'day' | 'week' | 'month' | 'year',
   ): Promise<PaginatedResponse<any>> {
     const range = getPeriodRange(filter, 'Asia/Jakarta');
-    console.log(range);
     const skip = (page - 1) * limit;
     const whereCondition: Prisma.TransactionWhereInput = {
       userId: userId,
@@ -262,9 +261,9 @@ export class TransactionService {
     });
 
     return {
-      message: `Transaction ${dayjs(range?.gte).format('DD/MM/YYYY')} - ${dayjs(range?.lt).format('DD/MM/YYYY')}`,
+      message: `Transaction ${filter ? `${dayjs(range?.gte).format('DD/MM/YYYY')} - ${dayjs(range?.lt).format('DD/MM/YYYY')}` : 'All'}`,
       status: 'Success',
-      data: result,
+      data: transactions,
       meta: {
         total: totalTransactions,
         page,
