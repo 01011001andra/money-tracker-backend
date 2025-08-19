@@ -3,7 +3,10 @@
   "builds": [
     {
       "src": "src/main.js",
-      "use": "@vercel/node"
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["prisma/**", "prisma.config.ts", "public/**"]
+      }
     }
   ],
 
@@ -28,6 +31,13 @@
     {
       "source": "/(.*)",
       "destination": "/src/main.js"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "src/main.ts",
+      "methods": ["GET", "POST", "PUT", "PATCH", "DELETE"]
     }
   ]
 }
