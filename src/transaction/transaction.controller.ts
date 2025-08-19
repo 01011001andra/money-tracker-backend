@@ -13,7 +13,7 @@ import { TransactionService } from './transaction.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { Request } from 'express';
-import { JwtAuthGuard } from '@/common/guards/jwt.guard';
+import { JwtAuthGuard } from '../common/guards/jwt.guard';
 
 @Controller('transaction')
 export class TransactionController {

@@ -10,13 +10,13 @@ import { Prisma } from '@prisma/client';
 import {
   BaseResponse,
   PaginatedResponse,
-} from '@/common/types/global/response.type';
+} from '../common/types/global/response.type';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
-import { CategoryService } from '@/category/category.service';
-import { getPeriodRange } from '@/common/utils/helper';
-// import { getRange } from '@/common/utils/helper';
+import { CategoryService } from '../category/category.service';
+import { getPeriodRange } from '../common/utils/helper';
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
 

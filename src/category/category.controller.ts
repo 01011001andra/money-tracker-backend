@@ -13,7 +13,7 @@ import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Request } from 'express';
-import { JwtAuthGuard } from '@/common/guards/jwt.guard';
+import { JwtAuthGuard } from '../common/guards/jwt.guard';
 
 @Controller('category')
 export class CategoryController {
