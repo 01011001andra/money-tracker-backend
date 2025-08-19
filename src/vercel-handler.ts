@@ -23,9 +23,8 @@ export default async function handler(req: any, res: any) {
     app.setGlobalPrefix('api/v1'); // tanpa leading slash
 
     app.enableCors({
-      origin: ['http://localhost', 'https://musyan.vercel.app'],
+      origin: '*',
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-      credentials: true,
     });
 
     app.use(json({ limit: '2mb' }));
