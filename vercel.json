@@ -27,12 +27,6 @@
       ]
     }
   ],
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/src/main.js"
-    }
-  ],
   "routes": [
     {
       "src": "/(.*)",
