@@ -1,11 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { DatabaseService } from 'src/database/database.service';
-import { Period } from 'src/common/types/global/enum.type';
+import { DatabaseService } from '@/database/database.service';
+import { Period } from '@/common/types/global/enum.type';
 
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
-import { PaginatedResponse } from 'src/common/types/global/response.type';
+import { PaginatedResponse } from '@/common/types/global/response.type';
 import { Prisma } from '@prisma/client';
 
 dayjs.extend(utc);

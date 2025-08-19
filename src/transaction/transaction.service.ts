@@ -5,18 +5,18 @@ import {
 } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
-import { DatabaseService } from 'src/database/database.service';
+import { DatabaseService } from '@/database/database.service';
 import { Prisma } from '@prisma/client';
 import {
   BaseResponse,
   PaginatedResponse,
-} from 'src/common/types/global/response.type';
+} from '@/common/types/global/response.type';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
-import { CategoryService } from 'src/category/category.service';
-import { getPeriodRange } from 'src/common/utils/helper';
-// import { getRange } from 'src/common/utils/helper';
+import { CategoryService } from '@/category/category.service';
+import { getPeriodRange } from '@/common/utils/helper';
+// import { getRange } from '@/common/utils/helper';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 

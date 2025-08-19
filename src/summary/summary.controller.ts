@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { SummaryService } from './summary.service';
 import { Request } from 'express';
-import { JwtAuthGuard } from 'src/common/guards/jwt.guard';
+import { JwtAuthGuard } from '@/common/guards/jwt.guard';
 
 @Controller('summary')
 export class SummaryController {
