@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { DatabaseService } from '@/database/database.service';
+import { DatabaseService } from '../database/database.service';
 import { Period } from '@/common/types/global/enum.type';
 
 import dayjs from 'dayjs';

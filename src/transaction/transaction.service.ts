@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
-import { DatabaseService } from '@/database/database.service';
+import { DatabaseService } from '../database/database.service';
 import { Prisma } from '@prisma/client';
 import {
   BaseResponse,
