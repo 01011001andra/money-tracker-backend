@@ -3,7 +3,10 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { CreateTransactionDto } from './dto/create-transaction.dto';
+import {
+  CreateTransactionDto,
+  TypeTransaction,
+} from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { DatabaseService } from '../database/database.service';
 import { Prisma } from '@prisma/client';
@@ -214,16 +217,22 @@ export class TransactionService {
     limit: number,
     search: string,
     filter?: 'day' | 'week' | 'month' | 'year',
+    type?: TypeTransaction,
   ): Promise<PaginatedResponse<any>> {
     const range = getPeriodRange(filter, 'Asia/Jakarta');
     const skip = (page - 1) * limit;
+    if (type && !['INCOME', 'EXPENSE'].includes(type.toUpperCase())) {
+      throw new BadRequestException(`error ${type}`);
+    }
     const whereCondition: Prisma.TransactionWhereInput = {
       userId: userId,
       deletedAt: null,
-      ...(range && {
+      ...(filter && {
         transactionDate: range,
       }),
-
+      ...(type && {
+        type: type.toUpperCase() as TypeTransaction,
+      }),
       ...(search && {
         OR: [
           { title: { contains: search, mode: 'insensitive' } },
@@ -253,7 +262,15 @@ export class TransactionService {
     });
     const result = transactions.map((t) => ({
       ...t,
-      transactionDate: dayjs(t.transactionDate).format('DD-MM-YYYY'),
+      icon: {
+        name: 'streamline-flex-color:wallet',
+        style: {
+          backgroundColor: '#fff',
+          color: '',
+          width: 20,
+          height: 20,
+        },
+      },
     }));
 
     const totalTransactions = await this.prisma.transaction.count({
@@ -263,7 +280,7 @@ export class TransactionService {
     return {
       message: `Transaction ${filter ? `${dayjs(range?.gte).format('DD/MM/YYYY')} - ${dayjs(range?.lt).format('DD/MM/YYYY')}` : 'All'}`,
       status: 'Success',
-      data: transactions,
+      data: result,
       meta: {
         total: totalTransactions,
         page,

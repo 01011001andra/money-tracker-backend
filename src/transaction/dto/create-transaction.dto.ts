@@ -7,7 +7,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-enum TypeTransaction {
+export enum TypeTransaction {
   INCOME = 'INCOME',
   EXPENSE = 'EXPENSE',
 }

@@ -10,7 +10,10 @@ import {
   Put,
 } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
-import { CreateTransactionDto } from './dto/create-transaction.dto';
+import {
+  CreateTransactionDto,
+  TypeTransaction,
+} from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../common/guards/jwt.guard';
@@ -40,6 +43,7 @@ export class TransactionController {
       Number(req.query.limit || 10),
       (req.query.search as string) || '',
       (req.query.filter as 'day' | 'week' | 'month' | 'year') || '',
+      req.query.type as TypeTransaction,
     );
   }
 
