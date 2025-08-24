@@ -8,7 +8,7 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(isoWeek);
 
-type Filter = 'day' | 'week' | 'month' | 'year' | undefined;
+export type Filter = 'day' | 'week' | 'month' | 'year' | undefined;
 
 export function getPeriodRange(
   filter?: Filter,
