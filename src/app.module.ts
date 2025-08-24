@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { SummaryModule } from './summary/summary.module';
 import { CategoryModule } from './category/category.module';
+import { BffModule } from './bff/bff.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { CategoryModule } from './category/category.module';
     TransactionModule,
     SummaryModule,
     CategoryModule,
+    BffModule,
   ],
   controllers: [AppController],
   providers: [AppService],

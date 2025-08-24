@@ -7,5 +7,6 @@ import { CategoryModule } from '../category/category.module';
   imports: [CategoryModule],
   controllers: [TransactionController],
   providers: [TransactionService],
+  exports: [TransactionService],
 })
 export class TransactionModule {}

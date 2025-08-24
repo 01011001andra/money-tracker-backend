@@ -10,7 +10,11 @@ dayjs.extend(isoWeek);
 
 type Filter = 'day' | 'week' | 'month' | 'year' | undefined;
 
-export function getPeriodRange(filter?: Filter, tz = 'Asia/Jakarta') {
+export function getPeriodRange(
+  filter?: Filter,
+  tz = 'Asia/Jakarta',
+  endTime?: boolean,
+) {
   if (!filter) {
     return undefined; // filter kosong => tidak ada range
   }
@@ -35,7 +39,7 @@ export function getPeriodRange(filter?: Filter, tz = 'Asia/Jakarta') {
       return undefined; // fallback
   }
 
-  const endExclusive = now.add(1, 'second');
+  const endExclusive = endTime ? now.endOf('month') : now.add(1, 'second');
 
   return {
     gte: start.toDate(),
