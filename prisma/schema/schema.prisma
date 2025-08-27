@@ -24,6 +24,7 @@ model User {
      summary             Summary[]
      details             DetailSummary[]
      category            Category[]
+     targetAmount        IncomeTarget?
      updatedAt           DateTime            @updatedAt
      createdAt           DateTime            @default(now())
 }
@@ -87,6 +88,19 @@ model DetailSummary {
     @@unique([summaryId, transactionId])
     @@index([userId, summaryId])
     @@index([transactionId])
+}
+
+model IncomeTarget {
+    id              String           @id @default(uuid())
+    dailyTarget     Int?
+    weeklyTarget    Int?
+    monthlyTarget   Int?
+    yearlyTarget    Int?
+    userId          String           @unique
+    updatedAt       DateTime         @updatedAt
+    createdAt       DateTime         @default(now())
+
+    user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum Period {

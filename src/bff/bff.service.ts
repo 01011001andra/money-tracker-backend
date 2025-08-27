@@ -7,7 +7,7 @@ const THRESHOLD_PCT = 5;
 export class BffService {
   constructor(private prisma: DatabaseService) {}
 
-  async dashboard() {
+  async dashboard(userId: string) {
     function buildMessage(
       income: number,
       expense: number,
@@ -112,6 +112,17 @@ export class BffService {
       const message = buildMessage(income, expense, period);
       return { income, expense, message };
     };
+    const getTotalIncomeByPeriod = async (
+      period: Exclude<Filter, undefined>,
+    ) => {
+      const range = getPeriodRange(period);
+      const incomeTotal = await this.prisma.transaction.aggregate({
+        _sum: { amount: true },
+        where: { transactionDate: range, type: 'INCOME' },
+      });
+      const income = incomeTotal._sum.amount ?? 0;
+      return income;
+    };
 
     const transactions = await this.prisma.transaction.findMany({
       select: {
@@ -143,14 +154,7 @@ export class BffService {
         },
       };
     });
-    const monthIncome = await this.prisma.transaction.aggregate({
-      _sum: { amount: true },
-      where: { transactionDate: getPeriodRange('month'), type: 'INCOME' },
-    });
-    const monthExpense = await this.prisma.transaction.aggregate({
-      _sum: { amount: true },
-      where: { transactionDate: getPeriodRange('month'), type: 'EXPENSE' },
-    });
+
     const [todayBal, weekBal, monthBal, yearBal] = await Promise.all([
       getBalanceByPeriod('day'),
       getBalanceByPeriod('week'),
@@ -163,6 +167,59 @@ export class BffService {
       getTotalTransactionByPeriod('month'),
       getTotalTransactionByPeriod('year'),
     ]);
+    const [todayIncome, weekIncome, monthIncome, yearIncome] =
+      await Promise.all([
+        getTotalIncomeByPeriod('day'),
+        getTotalIncomeByPeriod('week'),
+        getTotalIncomeByPeriod('month'),
+        getTotalIncomeByPeriod('year'),
+      ]);
+    const overview = await this.prisma.incomeTarget.findUnique({
+      where: { userId: userId },
+      select: {
+        dailyTarget: true,
+        weeklyTarget: true,
+        monthlyTarget: true,
+        yearlyTarget: true,
+      },
+    });
+    const overViewResult = overview
+      ? [
+          {
+            type: 'daily',
+            amount: overview?.dailyTarget ?? null,
+            percentTarget: overview?.dailyTarget
+              ? (todayIncome / overview?.dailyTarget) * 100
+              : null,
+            label: 'Good',
+          },
+          {
+            type: 'weekly',
+            amount: overview?.weeklyTarget ?? null,
+            percentTarget: overview?.weeklyTarget
+              ? (weekIncome / overview?.weeklyTarget) * 100
+              : null,
+            label: 'Very Good',
+          },
+          {
+            type: 'monthly',
+            amount: overview?.monthlyTarget ?? null,
+            percentTarget: overview?.monthlyTarget
+              ? (monthIncome / overview?.monthlyTarget) * 100
+              : null,
+            label: 'Nice',
+          },
+          {
+            type: 'yearly',
+            amount: overview?.yearlyTarget ?? null,
+            percentTarget: overview?.yearlyTarget
+              ? (yearIncome / overview?.yearlyTarget) * 100
+              : null,
+            label: 'Yes',
+          },
+        ]
+      : null;
+
     return {
       message: 'Dashboard data',
       status: 'success',
@@ -181,20 +238,7 @@ export class BffService {
           ],
         },
         activity: activity,
-        spendingOverview: [
-          {
-            name: 'income',
-            total: monthIncome._sum.amount || 0,
-            progress: 76,
-            label: 'of target',
-          },
-          {
-            name: 'expense',
-            total: monthExpense._sum.amount || 0,
-            progress: 76,
-            label: 'of budget used',
-          },
-        ],
+        overview: overViewResult,
         notification: {
           title: 'Notification',
           news: 8,

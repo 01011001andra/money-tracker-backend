@@ -8,6 +8,7 @@ import { TransactionModule } from './transaction/transaction.module';
 import { SummaryModule } from './summary/summary.module';
 import { CategoryModule } from './category/category.module';
 import { BffModule } from './bff/bff.module';
+import { IncomeTargetModule } from './income-target/income-target.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { BffModule } from './bff/bff.module';
     SummaryModule,
     CategoryModule,
     BffModule,
+    IncomeTargetModule,
   ],
   controllers: [AppController],
   providers: [AppService],
