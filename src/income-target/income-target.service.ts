@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateIncomeTargetDto } from './dto/create-income-target.dto';
 import { UpdateIncomeTargetDto } from './dto/update-income-target.dto';
 import { DatabaseService } from 'src/database/database.service';
+import { Filter, getPeriodRange } from 'src/common/utils/helper';
 
 @Injectable()
 export class IncomeTargetService {
@@ -12,7 +13,7 @@ export class IncomeTargetService {
       where: { userId },
     });
     if (incomeTarget) {
-      const result = await this.prisma.incomeTarget.update({
+      await this.prisma.incomeTarget.update({
         data: {
           dailyTarget: dto.dailyTarget,
           weeklyTarget: dto.weeklyTarget,
@@ -27,9 +28,14 @@ export class IncomeTargetService {
           yearlyTarget: true,
         },
       });
-      return { message: 'Updated', status: 'success', data: result };
+
+      return {
+        message: 'Updated',
+        status: 'success',
+        data: await this.overview(userId),
+      };
     } else {
-      const result = await this.prisma.incomeTarget.create({
+      await this.prisma.incomeTarget.create({
         data: {
           dailyTarget: dto.dailyTarget,
           weeklyTarget: dto.weeklyTarget,
@@ -44,8 +50,81 @@ export class IncomeTargetService {
           yearlyTarget: true,
         },
       });
-      return { message: 'Created', status: 'success', data: result };
+      return {
+        message: 'Created',
+        status: 'success',
+        data: await this.overview(userId),
+      };
     }
+  }
+
+  async overview(userId: string) {
+    const getTotalIncomeByPeriod = async (
+      period: Exclude<Filter, undefined>,
+    ) => {
+      const range = getPeriodRange(period);
+      const incomeTotal = await this.prisma.transaction.aggregate({
+        _sum: { amount: true },
+        where: { transactionDate: range, type: 'INCOME' },
+      });
+      const income = incomeTotal._sum.amount ?? 0;
+      return income;
+    };
+
+    const [todayIncome, weekIncome, monthIncome, yearIncome] =
+      await Promise.all([
+        getTotalIncomeByPeriod('day'),
+        getTotalIncomeByPeriod('week'),
+        getTotalIncomeByPeriod('month'),
+        getTotalIncomeByPeriod('year'),
+      ]);
+    const overview = await this.prisma.incomeTarget.findUnique({
+      where: { userId: userId },
+      select: {
+        dailyTarget: true,
+        weeklyTarget: true,
+        monthlyTarget: true,
+        yearlyTarget: true,
+      },
+    });
+    const overViewResult = overview
+      ? [
+          {
+            type: 'daily',
+            amount: overview?.dailyTarget ?? null,
+            percentTarget: overview?.dailyTarget
+              ? (todayIncome / overview?.dailyTarget) * 100
+              : null,
+            label: 'Good',
+          },
+          {
+            type: 'weekly',
+            amount: overview?.weeklyTarget ?? null,
+            percentTarget: overview?.weeklyTarget
+              ? (weekIncome / overview?.weeklyTarget) * 100
+              : null,
+            label: 'Very Good',
+          },
+          {
+            type: 'monthly',
+            amount: overview?.monthlyTarget ?? null,
+            percentTarget: overview?.monthlyTarget
+              ? (monthIncome / overview?.monthlyTarget) * 100
+              : null,
+            label: 'Nice',
+          },
+          {
+            type: 'yearly',
+            amount: overview?.yearlyTarget ?? null,
+            percentTarget: overview?.yearlyTarget
+              ? (yearIncome / overview?.yearlyTarget) * 100
+              : null,
+            label: 'Yes',
+          },
+        ]
+      : null;
+
+    return overViewResult;
   }
 
   findAll() {

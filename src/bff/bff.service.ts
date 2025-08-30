@@ -1,11 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { Filter, getPeriodRange } from 'src/common/utils/helper';
 import { DatabaseService } from 'src/database/database.service';
+import { IncomeTargetService } from 'src/income-target/income-target.service';
 const THRESHOLD_PCT = 5;
 
 @Injectable()
 export class BffService {
-  constructor(private prisma: DatabaseService) {}
+  constructor(
+    private prisma: DatabaseService,
+    private targetIncome: IncomeTargetService,
+  ) {}
 
   async dashboard(userId: string) {
     function buildMessage(
@@ -112,17 +116,6 @@ export class BffService {
       const message = buildMessage(income, expense, period);
       return { income, expense, message };
     };
-    const getTotalIncomeByPeriod = async (
-      period: Exclude<Filter, undefined>,
-    ) => {
-      const range = getPeriodRange(period);
-      const incomeTotal = await this.prisma.transaction.aggregate({
-        _sum: { amount: true },
-        where: { transactionDate: range, type: 'INCOME' },
-      });
-      const income = incomeTotal._sum.amount ?? 0;
-      return income;
-    };
 
     const transactions = await this.prisma.transaction.findMany({
       select: {
@@ -167,58 +160,6 @@ export class BffService {
       getTotalTransactionByPeriod('month'),
       getTotalTransactionByPeriod('year'),
     ]);
-    const [todayIncome, weekIncome, monthIncome, yearIncome] =
-      await Promise.all([
-        getTotalIncomeByPeriod('day'),
-        getTotalIncomeByPeriod('week'),
-        getTotalIncomeByPeriod('month'),
-        getTotalIncomeByPeriod('year'),
-      ]);
-    const overview = await this.prisma.incomeTarget.findUnique({
-      where: { userId: userId },
-      select: {
-        dailyTarget: true,
-        weeklyTarget: true,
-        monthlyTarget: true,
-        yearlyTarget: true,
-      },
-    });
-    const overViewResult = overview
-      ? [
-          {
-            type: 'daily',
-            amount: overview?.dailyTarget ?? null,
-            percentTarget: overview?.dailyTarget
-              ? (todayIncome / overview?.dailyTarget) * 100
-              : null,
-            label: 'Good',
-          },
-          {
-            type: 'weekly',
-            amount: overview?.weeklyTarget ?? null,
-            percentTarget: overview?.weeklyTarget
-              ? (weekIncome / overview?.weeklyTarget) * 100
-              : null,
-            label: 'Very Good',
-          },
-          {
-            type: 'monthly',
-            amount: overview?.monthlyTarget ?? null,
-            percentTarget: overview?.monthlyTarget
-              ? (monthIncome / overview?.monthlyTarget) * 100
-              : null,
-            label: 'Nice',
-          },
-          {
-            type: 'yearly',
-            amount: overview?.yearlyTarget ?? null,
-            percentTarget: overview?.yearlyTarget
-              ? (yearIncome / overview?.yearlyTarget) * 100
-              : null,
-            label: 'Yes',
-          },
-        ]
-      : null;
 
     return {
       message: 'Dashboard data',
@@ -238,7 +179,7 @@ export class BffService {
           ],
         },
         activity: activity,
-        overview: overViewResult,
+        overview: await this.targetIncome.overview(userId),
         notification: {
           title: 'Notification',
           news: 8,
