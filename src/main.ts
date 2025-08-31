@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { json, urlencoded } from 'express';
+import { json, NextFunction, Request, urlencoded } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -13,7 +13,12 @@ async function bootstrap() {
     }),
   );
   app.setGlobalPrefix('/api/v1');
-
+  app.use((req: Request, res, next: NextFunction) => {
+    console.log(
+      `[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`,
+    );
+    next();
+  });
   app.enableCors({
     origin: '*',
     methods: '*',
