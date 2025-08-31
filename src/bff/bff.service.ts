@@ -1,4 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import dayjs from 'dayjs';
+import weekOfYear from 'dayjs/plugin/weekOfYear';
+dayjs.extend(weekOfYear);
 import { Filter, getPeriodRange } from 'src/common/utils/helper';
 import { DatabaseService } from 'src/database/database.service';
 import { IncomeTargetService } from 'src/income-target/income-target.service';
@@ -10,6 +13,9 @@ export class BffService {
     private prisma: DatabaseService,
     private targetIncome: IncomeTargetService,
   ) {}
+  private kFormatter(v: number) {
+    return v >= 1000 ? `${Math.round(v / 100) / 10}k` : `${v}`;
+  }
 
   async dashboard(userId: string) {
     function buildMessage(
@@ -161,6 +167,44 @@ export class BffService {
       getTotalTransactionByPeriod('year'),
     ]);
 
+    const notification = {
+      title: 'Notification',
+      news: 8,
+      details: [
+        {
+          id: '1',
+          title: 'Transaction just added',
+          createdAt: '20200241214112',
+          read: false,
+          icon: {
+            name: 'emojione-monotone:money-bag',
+            style: {
+              backgroundColor: '#fff',
+              color: 'green',
+              width: 20,
+              height: 20,
+            },
+          },
+          type: 'success',
+        },
+        {
+          id: '2',
+          title: 'Transaction just added',
+          createdAt: '20200241214112',
+          read: false,
+          icon: {
+            name: 'emojione-monotone:money-bag',
+            style: {
+              backgroundColor: '#fff',
+              color: 'green',
+              width: 20,
+              height: 20,
+            },
+          },
+          type: 'info',
+        },
+      ],
+    };
     return {
       message: 'Dashboard data',
       status: 'success',
@@ -180,45 +224,176 @@ export class BffService {
         },
         activity: activity,
         overview: await this.targetIncome.overview(userId),
-        notification: {
-          title: 'Notification',
-          news: 8,
-          details: [
+        notification: null,
+      },
+    };
+  }
+
+  async report(userId: string) {
+    const start = dayjs().startOf('month').toDate();
+    const end = dayjs().endOf('month').toDate();
+
+    const tx = await this.prisma.transaction.findMany({
+      where: {
+        userId,
+        transactionDate: { gte: start, lte: end },
+        deletedAt: null,
+      },
+      select: {
+        amount: true,
+        type: true, // 'INCOME' | 'EXPENSE'
+        transactionDate: true,
+        category: { select: { name: true } },
+      },
+      orderBy: { transactionDate: 'asc' },
+    });
+
+    // Minggu dalam bulan (W1..W4/5)
+    const weeksCount = Math.max(1, Math.ceil(dayjs(end).date() / 7)); // 4 atau 5
+    const labels = Array.from({ length: weeksCount }, (_, i) => `W${i + 1}`);
+
+    const weeklyIncome = Array<number>(weeksCount).fill(0);
+    const weeklyExpense = Array<number>(weeksCount).fill(0);
+
+    // Pie: total expense per kategori
+    const expenseByCategory = new Map<string, number>();
+
+    for (const t of tx) {
+      const d = dayjs(t.transactionDate);
+      let weekIndex = Math.floor((d.date() - 1) / 7); // 0-based minggu dalam bulan
+      if (weekIndex < 0) weekIndex = 0;
+      if (weekIndex >= weeksCount) weekIndex = weeksCount - 1;
+
+      const amt = Number(t.amount) || 0;
+      if (t.type === 'INCOME') weeklyIncome[weekIndex] += amt;
+      else {
+        weeklyExpense[weekIndex] += amt;
+        const cat = t.category?.name ?? 'Unknown';
+        expenseByCategory.set(cat, (expenseByCategory.get(cat) ?? 0) + amt);
+      }
+    }
+
+    // Totals (hitung SETELAH pengisian)
+    const totalIncome = weeklyIncome.reduce((a, b) => a + b, 0);
+    const totalExpense = weeklyExpense.reduce((a, b) => a + b, 0);
+
+    const idr = new Intl.NumberFormat('id-ID');
+    const axisText = '#94a3b8';
+    const gridLine = '#e2e8f0';
+    const incomeColor = '#7c3aed';
+    const expenseColor = '#ef4444';
+
+    const incomeLabel = `Income Rp ${idr.format(totalIncome)}`;
+    const expenseLabel = `Expense Rp ${idr.format(totalExpense)}`;
+
+    // === Chart 1: Weekly Income vs Expense (Bar) ===
+    const weeklyBarOption = {
+      legend: {
+        top: 0,
+        left: 'left',
+        icon: 'circle',
+        itemWidth: 8,
+        itemHeight: 8,
+        textStyle: { color: axisText, fontSize: 12, fontWeight: 600 },
+        data: [incomeLabel, expenseLabel], // sinkron dg series.name
+      },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        confine: true,
+      },
+      grid: {
+        left: 12,
+        right: 12,
+        top: 60,
+        bottom: 12,
+        containLabel: true,
+      },
+      xAxis: {
+        type: 'category',
+        data: labels,
+        axisTick: { show: false },
+        axisLine: { show: false },
+        axisLabel: { color: axisText },
+      },
+      yAxis: {
+        type: 'value',
+        axisTick: { show: false },
+        axisLine: { show: false },
+        axisLabel: {
+          color: axisText,
+          formatter: (v: number) =>
+            v >= 1000 ? `${Math.round(v / 100) / 10}k` : `${v}`,
+        },
+        splitLine: { lineStyle: { color: gridLine } },
+      },
+      series: [
+        {
+          name: incomeLabel,
+          type: 'bar',
+          barWidth: 14,
+          itemStyle: { color: incomeColor, borderRadius: [6, 6, 0, 0] },
+          data: weeklyIncome,
+        },
+        {
+          name: expenseLabel,
+          type: 'bar',
+          barWidth: 14,
+          barGap: '30%',
+          itemStyle: { color: expenseColor, borderRadius: [6, 6, 0, 0] },
+          data: weeklyExpense,
+        },
+      ],
+    };
+
+    // === Chart 2: Expense by Category (Pie) ===
+    const pieData = Array.from(expenseByCategory.entries()).map(
+      ([name, value]) => ({ name, value }),
+    );
+    const pieOption = {
+      tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)', confine: true },
+      legend: { top: 0, left: 'center', textStyle: { color: axisText } },
+      series: [
+        {
+          name: 'Expense by Category',
+          type: 'pie',
+          radius: ['40%', '70%'],
+          center: ['50%', '55%'],
+          avoidLabelOverlap: true,
+          itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+          label: { show: false },
+          emphasis: { label: { show: true, fontSize: 12, fontWeight: 600 } },
+          labelLine: { show: false },
+          data: pieData,
+        },
+      ],
+    };
+
+    return {
+      message: 'Report list',
+      status: 'success',
+      data: [
+        {
+          name: 'Semua Transaksi',
+          type: 'section',
+          charts: [
             {
-              id: '1',
-              title: 'Transaction just added',
-              createdAt: '20200241214112',
-              read: false,
-              icon: {
-                name: 'emojione-monotone:money-bag',
-                style: {
-                  backgroundColor: '#fff',
-                  color: 'green',
-                  width: 20,
-                  height: 20,
-                },
+              header: {
+                title: 'Ringkasan Uang (Bulan ini)',
+                subTitle: `Perminggu`,
               },
-              type: 'success',
+              option: weeklyBarOption,
             },
             {
-              id: '2',
-              title: 'Transaction just added',
-              createdAt: '20200241214112',
-              read: false,
-              icon: {
-                name: 'emojione-monotone:money-bag',
-                style: {
-                  backgroundColor: '#fff',
-                  color: 'green',
-                  width: 20,
-                  height: 20,
-                },
+              header: {
+                title: 'Pengeluaran per Kategori',
+                subTitle: 'Bulan ini',
               },
-              type: 'info',
+              option: pieOption,
             },
           ],
         },
-      },
+      ],
     };
   }
 }

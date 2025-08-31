@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateIncomeTargetDto } from './dto/create-income-target.dto';
 import { UpdateIncomeTargetDto } from './dto/update-income-target.dto';
 import { DatabaseService } from 'src/database/database.service';
-import { Filter, getPeriodRange } from 'src/common/utils/helper';
+import { Filter, getLabel, getPeriodRange } from 'src/common/utils/helper';
 
 @Injectable()
 export class IncomeTargetService {
@@ -78,6 +78,7 @@ export class IncomeTargetService {
         getTotalIncomeByPeriod('month'),
         getTotalIncomeByPeriod('year'),
       ]);
+
     const overview = await this.prisma.incomeTarget.findUnique({
       where: { userId: userId },
       select: {
@@ -87,39 +88,62 @@ export class IncomeTargetService {
         yearlyTarget: true,
       },
     });
+    const getPercentAge = (
+      type: 'dailyTarget' | 'weeklyTarget' | 'monthlyTarget' | 'yearlyTarget',
+    ) => {
+      if (type === 'dailyTarget') {
+        return overview?.dailyTarget
+          ? (todayIncome / overview?.dailyTarget) * 100
+          : null;
+      }
+      if (type === 'weeklyTarget') {
+        return overview?.weeklyTarget
+          ? (weekIncome / overview?.weeklyTarget) * 100
+          : null;
+      }
+      if (type === 'monthlyTarget') {
+        return overview?.monthlyTarget
+          ? (monthIncome / overview?.monthlyTarget) * 100
+          : null;
+      }
+      if (type === 'yearlyTarget') {
+        return overview?.yearlyTarget
+          ? (yearIncome / overview?.yearlyTarget) * 100
+          : null;
+      }
+    };
+    const [todayPercentAge, weekPercentAge, monthPercentAge, yearPercentAge] =
+      await Promise.all([
+        getPercentAge('dailyTarget'),
+        getPercentAge('weeklyTarget'),
+        getPercentAge('monthlyTarget'),
+        getPercentAge('yearlyTarget'),
+      ]);
     const overViewResult = overview
       ? [
           {
             type: 'daily',
             amount: overview?.dailyTarget ?? null,
-            percentTarget: overview?.dailyTarget
-              ? (todayIncome / overview?.dailyTarget) * 100
-              : null,
-            label: 'Good',
+            percentTarget: todayPercentAge,
+            label: getLabel(todayPercentAge || 0),
           },
           {
             type: 'weekly',
             amount: overview?.weeklyTarget ?? null,
-            percentTarget: overview?.weeklyTarget
-              ? (weekIncome / overview?.weeklyTarget) * 100
-              : null,
-            label: 'Very Good',
+            percentTarget: weekPercentAge,
+            label: getLabel(weekPercentAge || 0),
           },
           {
             type: 'monthly',
             amount: overview?.monthlyTarget ?? null,
-            percentTarget: overview?.monthlyTarget
-              ? (monthIncome / overview?.monthlyTarget) * 100
-              : null,
-            label: 'Nice',
+            percentTarget: monthPercentAge,
+            label: getLabel(monthPercentAge || 0),
           },
           {
             type: 'yearly',
             amount: overview?.yearlyTarget ?? null,
-            percentTarget: overview?.yearlyTarget
-              ? (yearIncome / overview?.yearlyTarget) * 100
-              : null,
-            label: 'Yes',
+            percentTarget: yearPercentAge,
+            label: getLabel(yearPercentAge || 0),
           },
         ]
       : null;

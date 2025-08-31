@@ -46,3 +46,12 @@ export function getPeriodRange(
     lt: endExclusive.toDate(),
   };
 }
+
+export function getLabel(percent: number | null): string {
+  if (percent == null || percent === 0) return 'Belum ada progress';
+  if (percent < 25) return 'Awal yang bagus';
+  if (percent < 50) return 'Teruskan';
+  if (percent < 75) return 'Mantap';
+  if (percent < 100) return 'Hampir sampai';
+  return 'Target tercapai 🎉';
+}
