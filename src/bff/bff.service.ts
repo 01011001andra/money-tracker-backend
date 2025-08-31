@@ -134,6 +134,7 @@ export class BffService {
       },
       take: 5,
       orderBy: { createdAt: 'desc' },
+      where: { userId: userId },
     });
 
     const activity = transactions.map((transaction) => {
