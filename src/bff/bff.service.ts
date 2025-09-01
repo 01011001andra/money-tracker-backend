@@ -94,11 +94,11 @@ export class BffService {
       const [incomeAgg, expenseAgg] = await Promise.all([
         this.prisma.transaction.aggregate({
           _sum: { amount: true },
-          where: { transactionDate: range, type: 'INCOME' },
+          where: { transactionDate: range, type: 'INCOME', deletedAt: null },
         }),
         this.prisma.transaction.aggregate({
           _sum: { amount: true },
-          where: { transactionDate: range, type: 'EXPENSE' },
+          where: { transactionDate: range, type: 'EXPENSE', deletedAt: null },
         }),
       ]);
       const income = incomeAgg._sum.amount ?? 0;
@@ -111,10 +111,10 @@ export class BffService {
       const range = getPeriodRange(period);
       const [incomeTotal, expenseTotal] = await Promise.all([
         this.prisma.transaction.count({
-          where: { transactionDate: range, type: 'INCOME' },
+          where: { transactionDate: range, type: 'INCOME', deletedAt: null },
         }),
         this.prisma.transaction.count({
-          where: { transactionDate: range, type: 'EXPENSE' },
+          where: { transactionDate: range, type: 'EXPENSE', deletedAt: null },
         }),
       ]);
       const income = incomeTotal ?? 0;
@@ -134,7 +134,7 @@ export class BffService {
       },
       take: 5,
       orderBy: { createdAt: 'desc' },
-      where: { userId: userId },
+      where: { userId: userId, deletedAt: null },
     });
 
     const activity = transactions.map((transaction) => {
@@ -233,7 +233,6 @@ export class BffService {
   async report(userId: string) {
     const start = dayjs().startOf('month').toDate();
     const end = dayjs().endOf('month').toDate();
-
     const tx = await this.prisma.transaction.findMany({
       where: {
         userId,

@@ -65,7 +65,7 @@ export class IncomeTargetService {
       const range = getPeriodRange(period);
       const incomeTotal = await this.prisma.transaction.aggregate({
         _sum: { amount: true },
-        where: { transactionDate: range, type: 'INCOME' },
+        where: { transactionDate: range, type: 'INCOME', deletedAt: null },
       });
       const income = incomeTotal._sum.amount ?? 0;
       return income;

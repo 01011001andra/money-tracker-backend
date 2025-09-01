@@ -92,6 +92,7 @@ export class TransactionService {
             lte: endDate.toDate(),
           },
           type: 'INCOME', // Hanya pendapatan
+          deletedAt: null,
         },
       });
       const incomeDetail = await this.prisma.transaction.findMany({
@@ -102,6 +103,7 @@ export class TransactionService {
             lte: endDate.toDate(),
           },
           type: 'INCOME', // Hanya pendapatan
+          deletedAt: null,
         },
       });
       return {
@@ -123,6 +125,7 @@ export class TransactionService {
             lte: endDate.toDate(),
           },
           type: 'EXPENSE', // Hanya pengeluaran
+          deletedAt: null,
         },
       });
       const expenseDetail = await this.prisma.transaction.findMany({
@@ -133,6 +136,7 @@ export class TransactionService {
             lte: endDate.toDate(),
           },
           type: 'EXPENSE', // Hanya pendapatan
+          deletedAt: null,
         },
       });
       return {
@@ -154,6 +158,7 @@ export class TransactionService {
             lte: endDate.toDate(),
           },
           type: 'INCOME', // Hanya pendapatan
+          deletedAt: null,
         },
       });
       const incomeDetail = await this.prisma.transaction.findMany({
@@ -164,6 +169,7 @@ export class TransactionService {
             lte: endDate.toDate(),
           },
           type: 'INCOME', // Hanya pendapatan
+          deletedAt: null,
         },
       });
 
@@ -178,6 +184,7 @@ export class TransactionService {
             lte: endDate.toDate(),
           },
           type: 'EXPENSE', // Hanya pengeluaran
+          deletedAt: null,
         },
       });
       const expenseDetail = await this.prisma.transaction.findMany({
@@ -188,6 +195,7 @@ export class TransactionService {
             lte: endDate.toDate(),
           },
           type: 'EXPENSE', // Hanya pendapatan
+          deletedAt: null,
         },
       });
 
