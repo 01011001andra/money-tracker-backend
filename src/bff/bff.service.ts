@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import dayjs from 'dayjs';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 dayjs.extend(weekOfYear);
-import { Filter, getPeriodRange } from 'src/common/utils/helper';
+import { Filter, getPeriodRange, PrismaDecimal } from 'src/common/utils/helper';
 import { DatabaseService } from 'src/database/database.service';
 import { IncomeTargetService } from 'src/income-target/income-target.service';
 const THRESHOLD_PCT = 5;
@@ -19,13 +20,15 @@ export class BffService {
 
   async dashboard(userId: string) {
     function buildMessage(
-      income: number,
-      expense: number,
+      income: Prisma.Decimal,
+      expense: Prisma.Decimal,
       period: Exclude<Filter, undefined>,
     ) {
-      const net = income - expense;
-      const total = income + expense;
-      const pct = total === 0 ? 0 : Math.round((net / total) * 100); // + = lebih hemat, - = boros
+      const net = income.minus(expense);
+      const total = income.add(expense);
+      const pct = Math.round(
+        total.isZero() ? 0 : net.div(total).times(100).toNumber(),
+      );
       const absPct = Math.abs(pct);
       const PERIOD_LABEL: Record<Exclude<Filter, undefined>, string> = {
         day: 'hari ini',
@@ -36,7 +39,7 @@ export class BffService {
 
       const label = PERIOD_LABEL[period];
 
-      if (income === 0 && expense === 0) {
+      if (income.isZero() && expense.isZero()) {
         return {
           type: 'info',
           color: '#60A5FA', // blue-400
@@ -45,7 +48,7 @@ export class BffService {
         };
       }
 
-      if (net > 0) {
+      if (net.gt(0)) {
         // income > expense
         if (pct >= THRESHOLD_PCT) {
           return {
@@ -63,7 +66,7 @@ export class BffService {
         };
       }
 
-      if (net < 0) {
+      if (net.lt(0)) {
         // expense > income
         if (-pct >= THRESHOLD_PCT) {
           return {
@@ -101,9 +104,9 @@ export class BffService {
           where: { transactionDate: range, type: 'EXPENSE', deletedAt: null },
         }),
       ]);
-      const income = incomeAgg._sum.amount ?? 0;
-      const expense = expenseAgg._sum.amount ?? 0;
-      return income - expense;
+      const income = PrismaDecimal(incomeAgg._sum.amount);
+      const expense = PrismaDecimal(expenseAgg._sum.amount);
+      return income.minus(expense);
     };
     const getTotalTransactionByPeriod = async (
       period: Exclude<Filter, undefined>,
@@ -117,9 +120,24 @@ export class BffService {
           where: { transactionDate: range, type: 'EXPENSE', deletedAt: null },
         }),
       ]);
+      const [incomeAgg, expenseAgg] = await Promise.all([
+        this.prisma.transaction.aggregate({
+          _sum: { amount: true },
+          where: { transactionDate: range, type: 'INCOME', deletedAt: null },
+        }),
+        this.prisma.transaction.aggregate({
+          _sum: { amount: true },
+          where: { transactionDate: range, type: 'EXPENSE', deletedAt: null },
+        }),
+      ]);
       const income = incomeTotal ?? 0;
       const expense = expenseTotal ?? 0;
-      const message = buildMessage(income, expense, period);
+
+      const message = buildMessage(
+        PrismaDecimal(incomeAgg._sum.amount),
+        PrismaDecimal(expenseAgg._sum.amount),
+        period,
+      );
       return { income, expense, message };
     };
 
@@ -233,6 +251,7 @@ export class BffService {
   async report(userId: string) {
     const start = dayjs().startOf('month').toDate();
     const end = dayjs().endOf('month').toDate();
+
     const tx = await this.prisma.transaction.findMany({
       where: {
         userId,

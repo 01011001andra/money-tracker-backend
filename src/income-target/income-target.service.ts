@@ -2,7 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { CreateIncomeTargetDto } from './dto/create-income-target.dto';
 import { UpdateIncomeTargetDto } from './dto/update-income-target.dto';
 import { DatabaseService } from 'src/database/database.service';
-import { Filter, getLabel, getPeriodRange } from 'src/common/utils/helper';
+import {
+  Filter,
+  formatPercentMax3Digits,
+  getLabel,
+  getPeriodRange,
+  PrismaDecimal,
+} from 'src/common/utils/helper';
 
 @Injectable()
 export class IncomeTargetService {
@@ -67,7 +73,7 @@ export class IncomeTargetService {
         _sum: { amount: true },
         where: { transactionDate: range, type: 'INCOME', deletedAt: null },
       });
-      const income = incomeTotal._sum.amount ?? 0;
+      const income = PrismaDecimal(incomeTotal._sum.amount) ?? 0;
       return income;
     };
 
@@ -93,22 +99,30 @@ export class IncomeTargetService {
     ) => {
       if (type === 'dailyTarget') {
         return overview?.dailyTarget
-          ? (todayIncome / overview?.dailyTarget) * 100
+          ? PrismaDecimal(todayIncome)
+              .dividedBy(overview?.dailyTarget)
+              .times(100)
           : null;
       }
       if (type === 'weeklyTarget') {
         return overview?.weeklyTarget
-          ? (weekIncome / overview?.weeklyTarget) * 100
+          ? PrismaDecimal(weekIncome)
+              .dividedBy(overview?.weeklyTarget)
+              .times(100)
           : null;
       }
       if (type === 'monthlyTarget') {
         return overview?.monthlyTarget
-          ? (monthIncome / overview?.monthlyTarget) * 100
+          ? PrismaDecimal(monthIncome)
+              .dividedBy(overview?.monthlyTarget)
+              .times(100)
           : null;
       }
       if (type === 'yearlyTarget') {
         return overview?.yearlyTarget
-          ? (yearIncome / overview?.yearlyTarget) * 100
+          ? PrismaDecimal(yearIncome)
+              .dividedBy(overview?.yearlyTarget)
+              .times(100)
           : null;
       }
     };
@@ -124,26 +138,34 @@ export class IncomeTargetService {
           {
             type: 'daily',
             amount: overview?.dailyTarget ?? null,
-            percentTarget: todayPercentAge,
-            label: getLabel(todayPercentAge || 0),
+            percentTarget: formatPercentMax3Digits(
+              PrismaDecimal(todayPercentAge),
+            ),
+            label: getLabel(PrismaDecimal(todayPercentAge)),
           },
           {
             type: 'weekly',
             amount: overview?.weeklyTarget ?? null,
-            percentTarget: weekPercentAge,
-            label: getLabel(weekPercentAge || 0),
+            percentTarget: formatPercentMax3Digits(
+              PrismaDecimal(weekPercentAge),
+            ),
+            label: getLabel(PrismaDecimal(weekPercentAge)),
           },
           {
             type: 'monthly',
             amount: overview?.monthlyTarget ?? null,
-            percentTarget: monthPercentAge,
-            label: getLabel(monthPercentAge || 0),
+            percentTarget: formatPercentMax3Digits(
+              PrismaDecimal(monthPercentAge),
+            ),
+            label: getLabel(PrismaDecimal(monthPercentAge)),
           },
           {
             type: 'yearly',
             amount: overview?.yearlyTarget ?? null,
-            percentTarget: yearPercentAge,
-            label: getLabel(yearPercentAge || 0),
+            percentTarget: formatPercentMax3Digits(
+              PrismaDecimal(yearPercentAge),
+            ),
+            label: getLabel(PrismaDecimal(yearPercentAge)),
           },
         ]
       : null;

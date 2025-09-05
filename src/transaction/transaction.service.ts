@@ -18,7 +18,7 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import { CategoryService } from '../category/category.service';
-import { getPeriodRange } from '../common/utils/helper';
+import { getPeriodRange, PrismaDecimal } from '../common/utils/helper';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -199,8 +199,10 @@ export class TransactionService {
         },
       });
 
-      const balance =
-        (totalIncome._sum.amount || 0) - (totalExpense._sum.amount || 0);
+      const decTotalIncome = PrismaDecimal(totalIncome._sum.amount);
+      const decTotalExpense = PrismaDecimal(totalExpense._sum.amount);
+      const balance = decTotalIncome.minus(decTotalExpense);
+
       return {
         message: `Balance summary for ${startDate.format('YYYY-MM-DD HH:mm:ss')} - ${endDate.format('YYYY-MM-DD HH:mm:ss')}`,
         status: 'success',

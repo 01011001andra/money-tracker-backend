@@ -46,7 +46,7 @@ model Transaction {
      userId              String
      type                TransactionType
      categoryId          String
-     amount              Int             
+     amount              Decimal  @db.Decimal(20, 0)
      note                String?
      transactionDate     DateTime
      user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
