@@ -7,12 +7,15 @@ import {
   Param,
   Delete,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import { N8nService } from './n8n.service';
 import { CreateN8nDto } from './dto/create-n8n.dto';
 import { UpdateN8nDto } from './dto/update-n8n.dto';
 import { Request } from 'express';
+import { JwtAuthGuard } from 'src/common/guards/jwt.guard';
 
+@UseGuards(JwtAuthGuard)
 @Controller('n8n')
 export class N8nController {
   constructor(private readonly n8nService: N8nService) {}
@@ -25,7 +28,15 @@ export class N8nController {
   @Get('/transaction')
   findTransactionByTelegramId(@Req() req: Request) {
     return this.n8nService.findTransactionByTelegramId(
-      req.query.chatId as string,
+      req.query.telegramId as string,
+    );
+  }
+
+  @Post('/transaction')
+  createTransactionByTelegramId(@Req() req: Request) {
+    return this.n8nService.createTransactionByTelegramId(
+      req.query.telegramId as string,
+      req.body,
     );
   }
 
