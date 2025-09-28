@@ -29,6 +29,7 @@ export class N8nController {
   findTransactionByTelegramId(@Req() req: Request) {
     return this.n8nService.findTransactionByTelegramId(
       req.query.telegramId as string,
+      req.query.type as string,
     );
   }
 

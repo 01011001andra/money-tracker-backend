@@ -3,7 +3,11 @@ import { CreateN8nDto } from './dto/create-n8n.dto';
 import { UpdateN8nDto } from './dto/update-n8n.dto';
 import { DatabaseService } from 'src/database/database.service';
 import { TransactionService } from 'src/transaction/transaction.service';
-import { CreateTransactionDto } from 'src/transaction/dto/create-transaction.dto';
+import {
+  CreateTransactionDto,
+  TypeTransaction,
+} from 'src/transaction/dto/create-transaction.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class N8nService {
@@ -15,7 +19,9 @@ export class N8nService {
     return 'This action adds a new n8n';
   }
 
-  async findTransactionByTelegramId(telegramId: string) {
+  async findTransactionByTelegramId(telegramId: string, type: string) {
+    const transactionType = type.toUpperCase() as TypeTransaction;
+
     const n8nDetail = await this.prisma.n8N.findUnique({
       where: { telegramId: String(telegramId) },
     });
@@ -25,9 +31,12 @@ export class N8nService {
     }
 
     const result = await this.prisma.transaction.findMany({
-      where: { userId: n8nDetail?.userId, deletedAt: null },
+      where: {
+        userId: n8nDetail?.userId,
+        deletedAt: null,
+        type: transactionType,
+      },
       select: {
-        id: true,
         title: true,
         type: true,
         amount: true,
