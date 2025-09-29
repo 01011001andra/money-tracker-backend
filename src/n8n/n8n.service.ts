@@ -8,6 +8,10 @@ import {
   TypeTransaction,
 } from 'src/transaction/dto/create-transaction.dto';
 import { Prisma } from '@prisma/client';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import { toIsoUtcFromDdMmYyyy } from 'src/common/utils/helper';
+dayjs.extend(utc);
 
 @Injectable()
 export class N8nService {
@@ -30,7 +34,7 @@ export class N8nService {
       throw new NotFoundException('Chat id tidak ditemukan');
     }
 
-    const result = await this.prisma.transaction.findMany({
+    const transactions = await this.prisma.transaction.findMany({
       where: {
         userId: n8nDetail?.userId,
         deletedAt: null,
@@ -43,7 +47,16 @@ export class N8nService {
         transactionDate: true,
       },
     });
-    return result;
+    const filteredResult = transactions.map((transaction) => {
+      return {
+        ...transaction,
+        amount: Number(transaction.amount),
+        transactionDate: dayjs(transaction.transactionDate).format(
+          'DD-MM-YYYY',
+        ),
+      };
+    });
+    return filteredResult;
   }
 
   async createTransactionByTelegramId(
@@ -53,13 +66,17 @@ export class N8nService {
     const n8nDetail = await this.prisma.n8N.findUnique({
       where: { telegramId: String(telegramId) },
     });
-    console.log({ n8nDetail, telegramId });
     if (!n8nDetail) {
       throw new NotFoundException('Chat id tidak ditemukan');
     }
 
     const result = await this.transaction.create(
-      createTransactionDto,
+      {
+        ...createTransactionDto,
+        transactionDate: toIsoUtcFromDdMmYyyy(
+          createTransactionDto.transactionDate,
+        ),
+      },
       n8nDetail.userId,
     );
     return result;

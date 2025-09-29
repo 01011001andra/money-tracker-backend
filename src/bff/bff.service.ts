@@ -97,11 +97,21 @@ export class BffService {
       const [incomeAgg, expenseAgg] = await Promise.all([
         this.prisma.transaction.aggregate({
           _sum: { amount: true },
-          where: { transactionDate: range, type: 'INCOME', deletedAt: null },
+          where: {
+            transactionDate: range,
+            type: 'INCOME',
+            deletedAt: null,
+            userId,
+          },
         }),
         this.prisma.transaction.aggregate({
           _sum: { amount: true },
-          where: { transactionDate: range, type: 'EXPENSE', deletedAt: null },
+          where: {
+            transactionDate: range,
+            type: 'EXPENSE',
+            deletedAt: null,
+            userId,
+          },
         }),
       ]);
       const income = PrismaDecimal(incomeAgg._sum.amount);
@@ -114,20 +124,40 @@ export class BffService {
       const range = getPeriodRange(period);
       const [incomeTotal, expenseTotal] = await Promise.all([
         this.prisma.transaction.count({
-          where: { transactionDate: range, type: 'INCOME', deletedAt: null },
+          where: {
+            transactionDate: range,
+            type: 'INCOME',
+            deletedAt: null,
+            userId,
+          },
         }),
         this.prisma.transaction.count({
-          where: { transactionDate: range, type: 'EXPENSE', deletedAt: null },
+          where: {
+            transactionDate: range,
+            type: 'EXPENSE',
+            deletedAt: null,
+            userId,
+          },
         }),
       ]);
       const [incomeAgg, expenseAgg] = await Promise.all([
         this.prisma.transaction.aggregate({
           _sum: { amount: true },
-          where: { transactionDate: range, type: 'INCOME', deletedAt: null },
+          where: {
+            transactionDate: range,
+            type: 'INCOME',
+            deletedAt: null,
+            userId,
+          },
         }),
         this.prisma.transaction.aggregate({
           _sum: { amount: true },
-          where: { transactionDate: range, type: 'EXPENSE', deletedAt: null },
+          where: {
+            transactionDate: range,
+            type: 'EXPENSE',
+            deletedAt: null,
+            userId,
+          },
         }),
       ]);
       const income = incomeTotal ?? 0;

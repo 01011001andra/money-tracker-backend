@@ -3,6 +3,10 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import isoWeek from 'dayjs/plugin/isoWeek';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.extend(customParseFormat);
 import { Prisma } from '@prisma/client';
 
 dayjs.extend(utc);
@@ -70,3 +74,11 @@ export function formatPercentMax3Digits(n: Prisma.Decimal | null): number {
 
 export const PrismaDecimal = (v: Prisma.Decimal.Value | null | undefined) =>
   new Prisma.Decimal(v ?? 0);
+
+export function toIsoUtcFromDdMmYyyy(dateStr: string): string {
+  const jkt = dayjs.tz(dateStr + ' 00:00', 'DD-MM-YYYY HH:mm', 'Asia/Jakarta');
+  if (!jkt.isValid()) {
+    throw new Error('transactionDate invalid (harus DD-MM-YYYY)');
+  }
+  return jkt.utc().toISOString();
+}
