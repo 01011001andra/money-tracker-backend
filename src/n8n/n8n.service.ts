@@ -61,25 +61,47 @@ export class N8nService {
 
   async createTransactionByTelegramId(
     telegramId: string,
+    userId: string,
     createTransactionDto: CreateTransactionDto,
   ) {
-    const n8nDetail = await this.prisma.n8N.findUnique({
-      where: { telegramId: String(telegramId) },
-    });
-    if (!n8nDetail) {
-      throw new NotFoundException('Chat id tidak ditemukan');
-    }
+    if (userId) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+      if (!user) {
+        throw new NotFoundException('User tidak ditemukan');
+      }
 
-    const result = await this.transaction.create(
-      {
-        ...createTransactionDto,
-        transactionDate: toIsoUtcFromDdMmYyyy(
-          createTransactionDto.transactionDate,
-        ),
-      },
-      n8nDetail.userId,
-    );
-    return result;
+      const result = await this.transaction.create(
+        {
+          ...createTransactionDto,
+          transactionDate: toIsoUtcFromDdMmYyyy(
+            createTransactionDto.transactionDate,
+          ),
+        },
+        user.id,
+      );
+      return result;
+    }
+    if (telegramId) {
+      const n8nDetail = await this.prisma.n8N.findUnique({
+        where: { telegramId: String(telegramId) },
+      });
+      if (!n8nDetail) {
+        throw new NotFoundException('Chat id tidak ditemukan');
+      }
+
+      const result = await this.transaction.create(
+        {
+          ...createTransactionDto,
+          transactionDate: toIsoUtcFromDdMmYyyy(
+            createTransactionDto.transactionDate,
+          ),
+        },
+        n8nDetail.userId,
+      );
+      return result;
+    }
   }
 
   findOne(id: number) {

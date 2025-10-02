@@ -37,6 +37,7 @@ export class N8nController {
   createTransactionByTelegramId(@Req() req: Request) {
     return this.n8nService.createTransactionByTelegramId(
       req.query.telegramId as string,
+      req.query.userId as string,
       req.body,
     );
   }
